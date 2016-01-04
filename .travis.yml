@@ -1,0 +1,34 @@
+language: ruby
+rvm:
+  - 2.1.1
+
+before_script:
+  - "cp config/database.yml.sample config/database.yml"
+  - "bundle exec rake db:migrate RAILS_ENV=test"
+  - wget https://gist.github.com/rafamanzo/6179925/raw/77653bd6229e99d5251180a4488e2fa54d0cd4ac/db_bootstrap.sql
+  - wget https://gist.github.com/rafamanzo/6179925/raw/a38c3b33af3b1784eece46450cca65503337e4b5/install.sh
+  - chmod +x install.sh
+  - ./install.sh
+  - cp features/support/kalibro_cucumber_helpers.yml.sample features/support/kalibro_cucumber_helpers.yml
+  - git clone https://github.com/mezuro/kalibro_gatekeeper.git
+  - cd kalibro_gatekeeper
+  - cp config/database.yml.sample config/database.yml
+  - export BUNDLE_GEMFILE=$PWD/Gemfile
+  - bundle install
+  - bundle exec rails s -p 8081 -d
+  - cd ..
+  - export BUNDLE_GEMFILE=$PWD/Gemfile
+
+script:
+  - sudo service tomcat6 stop
+  - bundle exec rake spec
+  - bundle exec rake konacha:run
+  - sudo service tomcat6 start
+  - bundle exec rake cucumber
+
+notifications:
+  email:
+    recipients:
+      - mezuro-core@lists.ime.usp.br
+    on_success: change
+    on_failure: always
